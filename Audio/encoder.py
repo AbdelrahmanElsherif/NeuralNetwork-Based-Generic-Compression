@@ -1,3 +1,6 @@
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1YT1pp00ZO44DOD30D5HJzzAWrfkZepze?authuser=1)
+
+
 import wave, struct
 import keras
 import tensorflow as tf
