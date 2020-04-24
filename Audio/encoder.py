@@ -68,18 +68,19 @@ def norm(x):
 
 
 def encode(in_file, out_file):
-    autoencoder = keras.models.load_model("autoencoder2.model")
+    """
+    Takes in a file path to read (a wav file)
+    and a file path to write the encoded file to
+    """
+    autoencoder = keras.models.load_model("audio_autoencoder.model")
     in_layer = keras.layers.Input(shape=(1, 441))
     encode = autoencoder.layers[1](in_layer)
     encode = autoencoder.layers[2](encode)
     encode = autoencoder.layers[3](encode)
     encode = autoencoder.layers[4](encode)
-    #encode = autoencoder.layers[5](encode)
+    encode = autoencoder.layers[5](encode)
     encoder = keras.models.Model(in_layer, encode)
-    """
-    Takes in a file path to read (a wav file)
-    and a file path to write the encoded file to
-    """
+    
     # Read the file
     data, chans, samps, width, samp_rate = dataFromWave(in_file)
 
@@ -89,21 +90,15 @@ def encode(in_file, out_file):
     # Set our encoding frame width
     # Experimentally determined that 1/100th of a second has decent results
     rate = samp_rate // 100
-    print('rate = ', rate)
     # Rescale integer samples over range [-32768,32767] to floats over range [0.0,1.0]
     data = data.astype(float) / float(pow(2, 15))
     data += 1.0
     data = data / 2.0
-    print(('data.shape = ', data.shape))
     # Pad the samples with zeroes, if needed, to make the last encoding frame full
     n_in = len(data)
-    print('n_in = ', n_in)
     p_size = n_in + (rate - (n_in % rate))
-    print('p_size = ', p_size)
     padded = np.zeros((p_size,))
-    print('padded.shape = ', padded.shape)
     padded[0:n_in] = data
-    print('padded.shape = ', padded.shape)
 
     # Construct input layer
     inputs = padded.reshape(len(padded)//rate, 1, rate)
@@ -120,10 +115,10 @@ def decode(in_file, out_file):
     and decodes a wav file from them at the provided location.
     """
     # Load the model
-    autoencoder = keras.models.load_model("autoencoder2.model")
-    in_layer = keras.layers.Input(shape=(1, 441//8))
-    decode = autoencoder.layers[-3](in_layer)
-    #decode = autoencoder.layers[-3](decode)
+    autoencoder = keras.models.load_model("audio_autoencoder.model")
+    in_layer = keras.layers.Input(shape=(1, 441//16))
+    decode = autoencoder.layers[-4](in_layer)
+    decode = autoencoder.layers[-3](decode)
     decode = autoencoder.layers[-2](decode)
     decode = autoencoder.layers[-1](decode)
     decoder = keras.models.Model(in_layer, decode)
@@ -136,11 +131,9 @@ def decode(in_file, out_file):
     samp_rate = ins['params'][3]
     # Run the decoder
     outputs = decoder.predict(encoded)
-    print('outputs.shape=', outputs.shape)
 
     # Build a wav file
     out = outputs.reshape(outputs.shape[0]*outputs.shape[-1])
-    print("out.shape=", out.shape)
 
     if np.any(out > 0.9):
         noisy_part = out[out > 0.9]
