@@ -116,10 +116,17 @@ def encode(in_file, out_file):
 # Decompressing the .npz file to an audio file
 def decode(in_file, out_file):
     """
+<<<<<<< HEAD
        This function takes in a file prefix to a data/model file pair,
        and decodes a wav file from them at the provided location.
        example : python encode.py decode "path of the .npz file inteded for reconstructing" " path of directory where to save the reconstructed audio file "
        """
+=======
+    This function takes in a file prefix to a data/model file pair,
+    and decodes a wav file from them at the provided location.
+    example : python encode.py decode "path of the .npz file intended for reconstructing" " path of directory where to save the reconstructed audio file "
+    """
+>>>>>>> aca3d036df5b01e7c7d10cb8673429e5f21a00be
     # Load the model
     autoencoder = keras.models.load_model("audio_autoencoder.model")
 
