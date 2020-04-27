@@ -1,3 +1,4 @@
+
 import wave, struct
 import keras
 from keras.models import Model
@@ -5,35 +6,27 @@ from keras.layers import Dense, Input, LSTM
 import numpy as np
 import os
 
-#Loading training data
-DATA_FILES_WAV = 'audio_wav2'
-rate = 441
 
-in_layer = Input(shape=(1, rate))
+#Loading training data
+in_layer = Input(shape=(1, 441))
 # Construct the encoder layers
-encode = LSTM(rate, activation='relu', return_sequences=True)(in_layer)
-encode = Dense(rate // 2, activation='relu')(encode)
-encode = Dense(rate // 4, activation='relu')(encode)
-encode = Dense(rate // 8, activation='relu')(encode)
+encode = Dense(441, activation='relu')(in_layer)
+encode = Dense(441 // 2, activation='relu')(encode)
+encode = Dense(441 // 4, activation='relu')(encode)
+encode = Dense(441 // 8, activation='relu')(encode)
+encode = Dense(441 // 16, activation='relu')(encode)
 
 # Construct the decoder layers
-decode = Dense(rate // 4, activation='relu')(encode)
-decode = Dense(rate // 2, activation='relu')(decode)
-decode = Dense(rate, activation='sigmoid')(decode)
+decode = Dense(441 // 8, activation='relu')(encode)
+decode = Dense(441 // 4, activation='relu')(decode)
+decode = Dense(441 // 2, activation='relu')(decode)
+decode = Dense(441, activation='sigmoid')(decode)
 
 # The autoencoder is the whole thing
 autoencoder = Model(in_layer, decode)
 
-# The encoder is just the first part
-encoder = Model(in_layer, encode)
-# And the decoder takes encoded inputs and is constructed from the latter part
-encoded_input = Input(shape=(1, rate // 8))
-decoder = autoencoder.layers[-3](encoded_input)
-decoder = autoencoder.layers[-2](decoder)
-decoder = autoencoder.layers[-1](decoder)
-decoder = Model(encoded_input, decoder)
 # Compile the model
-autoencoder.compile('adam', loss='mse')
+autoencoder.compile('adamax', loss='mean_squared_logarithmic_error')
 
 
 def dataFromWave(fname):
@@ -69,28 +62,32 @@ def dataFromWave(fname):
 
 
 def train():
-    train_data = np.loadtxt('train_data.csv', delimiter=':')           #loading training data
-    autoencoder.fit(train_data, train_data, epochs=10, shuffle=True, callbacks=[cp_callback])       #Start training
-    autoencoder.save("autoencoder.model")       #Saving the trained model
+    # Start training
+    autoencoder.fit(train_data, train_data, epochs=10, shuffle=True, callbacks=[cp_callback])
+    #Saving trained model
+    autoencoder.save("audio_autoencoder.model")
+
+# Folder containing training dataset
+DATA_FILES_WAV = 'audio_wav'
 
 #Loading training data
 def load_data():
-    train_data = np.array([[]])
-    counter = 0         # used to calculate the number of files in the training data
+    train_data = np.array([])
+    rows = 0     # used to calculate the number of files in the training data
     directory = os.fsencode(DATA_FILES_WAV)
-
     '''
-     Looping through files of the training data, 
-     Collecting usefel data to use in compresssing and Reconstrucing the audio file 
-     Loading all the training audio files into a single training file 
-    '''
+         Looping through files of the training data, 
+         Collecting usefel data to use in compresssing and Reconstrucing the audio file 
+         Loading all the training audio files into a single training file 
+        '''
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
         print(filename)
-        if filename.endswith(".wav") or filename.endswith(".py"):
-            data, chans, samps, width, samp_rate = dataFromWave(DATA_FILES_WAV+"/"+filename)
+        if filename.endswith(".wav"):
+            data, chans, samps, width, samp_rate = dataFromWave(DATA_FILES_WAV + "/" + filename)
+            rate = samp_rate // 100
             data = np.array(data)
-            #Normalizing the data to range from [0:1] instead of [-32768:32678]
+            # Normalizing the data to range from [0:1] instead of [-32768:32678]
             data = data.astype(float) / float(pow(2, 15))
             data += 1.0
             data = data / 2.0
@@ -99,19 +96,16 @@ def load_data():
             padded = np.zeros((p_size,))
             padded[0:n_in] = data
             inputs = padded.reshape((len(padded) // rate, rate))
-            #Appending each file in the training data folder to have one csv file holding the entire training data
+            # Appending each file in the training data folder to have one csv file holding the entire training data
             train_data = np.append(train_data, inputs)
-            counter += 1
-    return train_data, counter
+            rows = rate + (len(padded) // rate)
+    return train_data, rows
 
 
-train_data, counter = load_data()
-train_data = train_data.reshape((counter*24001, 1, 441))
-np.savetxt('train_data.csv', train_data, delimiter=":")
-
+train_data, rows = load_data()
 #Saving the weights of the model into checkpoint file
 checkpoint_path = "cp.ckpt"
 cp_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
-                                                 save_weights_only=True,
-                                                 verbose=1)
+                                              save_weights_only=True,
+                                              verbose=1)
 train()

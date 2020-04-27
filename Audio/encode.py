@@ -70,11 +70,12 @@ def norm(x):
 def encode(in_file, out_file):
     """
         Takes in a file path to read (a wav file)
-        and a file path to write the encoded file to
-        example: python encode.py encode "path of file intended for compression" "path of directory where to save .npz file with the specified name for it "
-        """
+       and a file path to write the encoded file to
+       example: python encode.py encode "path of file intended for compression" "path of directory where to save .npz file with the specified name for it "
+    """
+
     # Loading the previously trained model
-    autoencoder = keras.models.load_model("autoencoder.model")
+    autoencoder = keras.models.load_model("audio_autoencoder.model")
 
     # constructing the encoder layers
     in_layer = keras.layers.Input(shape=(1, 441))
@@ -82,6 +83,7 @@ def encode(in_file, out_file):
     encode = autoencoder.layers[2](encode)
     encode = autoencoder.layers[3](encode)
     encode = autoencoder.layers[4](encode)
+    encode = autoencoder.layers[5](encode)
     encoder = keras.models.Model(in_layer, encode)
 
     # Read the file
@@ -93,21 +95,15 @@ def encode(in_file, out_file):
     # Set our encoding frame width
     # Experimentally determined that 1/100th of a second has decent results
     rate = samp_rate // 100
-    print('rate = ', rate)
     # Rescale integer samples over range [-32768,32767] to floats over range [0.0,1.0]
     data = data.astype(float) / float(pow(2, 15))
     data += 1.0
     data = data / 2.0
-    print(('data.shape = ', data.shape))
     # Pad the samples with zeroes, if needed, to make the last encoding frame full
     n_in = len(data)
-    print('n_in = ', n_in)
     p_size = n_in + (rate - (n_in % rate))
-    print('p_size = ', p_size)
     padded = np.zeros((p_size,))
-    print('padded.shape = ', padded.shape)
     padded[0:n_in] = data
-    print('padded.shape = ', padded.shape)
 
     # Construct input layer
     inputs = padded.reshape(len(padded)//rate, 1, rate)
@@ -120,16 +116,17 @@ def encode(in_file, out_file):
 # Decompressing the .npz file to an audio file
 def decode(in_file, out_file):
     """
-    This function takes in a file prefix to a data/model file pair,
-    and decodes a wav file from them at the provided location.
-    example : python encode.py decode "path of the .npz file inteded for reconstructing" " path of directory where to save the reconstructed audio file "
-    """
+       This function takes in a file prefix to a data/model file pair,
+       and decodes a wav file from them at the provided location.
+       example : python encode.py decode "path of the .npz file inteded for reconstructing" " path of directory where to save the reconstructed audio file "
+       """
     # Load the model
-    autoencoder = keras.models.load_model("autoencoder.model")
+    autoencoder = keras.models.load_model("audio_autoencoder.model")
 
-    #Constructing the decoder layers
-    in_layer = keras.layers.Input(shape=(1, 441//8))
-    decode = autoencoder.layers[-3](in_layer)
+    # Constructing the decoder layers
+    in_layer = keras.layers.Input(shape=(1, 441//16))
+    decode = autoencoder.layers[-4](in_layer)
+    decode = autoencoder.layers[-3](decode)
     decode = autoencoder.layers[-2](decode)
     decode = autoencoder.layers[-1](decode)
     decoder = keras.models.Model(in_layer, decode)
@@ -144,12 +141,15 @@ def decode(in_file, out_file):
     outputs = decoder.predict(encoded)
 
     # Build a wav file
-    out = np.concatenate(np.concatenate(outputs))
+    out = outputs.reshape(outputs.shape[0]*outputs.shape[-1])
 
-    #Removing noise in the reconstructed file using thresholding and noise clipping
-    noisy_part = out[out > 0.9]
-    out = nr.reduce_noise(audio_clip=out, noise_clip=noisy_part)
+    # Removing noise in the reconstructed file using thresholding and noise clipping
+    if np.any(out > 0.9):
+        noisy_part = out[out > 0.9]
+        out = nr.reduce_noise(audio_clip=out, noise_clip=noisy_part)
+
     out = (((out * 2.0) - 1.0) * float(pow(2, 15))).astype(int)
+
     out = list(map(norm, out))
 
     dataToWave(out_file + ".wav", out, chans, samps, width, samp_rate)
