@@ -2,7 +2,7 @@ import tensorflow as tf
 import argparse
 import numpy as np
 from EncoderDecoderImage import encode_image, decode_image
-from encoderr import encode_audio, decode_audio
+from EncoderDecoderAudio import encode_audio, decode_audio
 
 
 def encode(in_file, out_file):
