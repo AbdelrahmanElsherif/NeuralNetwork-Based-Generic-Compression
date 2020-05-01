@@ -3,7 +3,7 @@ Generic compression using autoencoder
 
 # Installation
 
-1 - Create your python virtual environment.
+1 - Create your python virtual environment
 2 - Install the necessary packages
 ```
 pip install tensorflow==2.1.0
