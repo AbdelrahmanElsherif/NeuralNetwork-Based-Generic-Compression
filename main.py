@@ -1,4 +1,3 @@
-import tensorflow as tf
 import argparse
 import numpy as np
 from EncoderDecoderImage import encode_image, decode_image
@@ -21,7 +20,6 @@ def decode(in_file, out_file):
 
 
 def main():
-
     # Do command line stuff
     parser = argparse.ArgumentParser(description='An experimental audio compressor using naive autoencoding.')
     subparsers = parser.add_subparsers(help='The mode in which to run')
