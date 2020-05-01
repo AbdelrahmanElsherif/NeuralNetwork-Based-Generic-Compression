@@ -21,10 +21,6 @@ def decode(in_file, out_file):
 
 
 def main():
-    # Limit Keras Memory Usage to avoid crashes
-    config = tf.ConfigProto()
-    config.gpu_options.per_process_gpu_memory_fraction = 0.7
-    session = tf.Session(config=config)
 
     # Do command line stuff
     parser = argparse.ArgumentParser(description='An experimental audio compressor using naive autoencoding.')
