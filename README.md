@@ -68,4 +68,5 @@ python main.py decode [compressed_file_path] [output_file_path]
 - TIFF
 
 ## Audio Dataset:
-- Beatport EDM Key Dataset https://zenodo.org/record/1101082#.XqyLuqgzZPZ
+- Beatport EDM Key Dataset https://zenodo.org/record/1101082#.XqyLuqgzZPZ 
+> Note: A protion of 2.49 GB Wav files (125 song) of the dataset is used is training
