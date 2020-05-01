@@ -3,7 +3,7 @@ Generic compression using autoencoder
 
 # Installation
 
-1 - Create your python virtual environment
+1 - Create your python(v3) virtual environment
 2 - Install the necessary packages
 ```
 pip install tensorflow==2.1.0
@@ -15,12 +15,9 @@ pip install noisereduce
 pip install numpy
 pip install matplotlib
 ```
-
-Alternatively using Conda:
-```
-conda config --append channels conda-forge
-conda config --append channels slobodan
-conda install tensorflow==2.1.0 keras==2.3.1 opencv==4.2.0.32
-conda install Pillow==7.0.0 image numpy matplotlib
-```
-#### Note: if you are gonna use conda, for some reason you can't install noisereduce using it, you will have to use "pip install noisereduce"
+3 - Download the following files from this github repo:
+- [main.py](https://github.com/AbdelrahmanElsherif/NeuralNetwork-Based-Generic-Compression/blob/master/main.py)
+[EncoderDecoderAudio.py](https://github.com/AbdelrahmanElsherif/NeuralNetwork-Based-Generic-Compression/blob/master/EncoderDecoderAudio.py)
+- [EncoderDecoderImage.py](https://github.com/AbdelrahmanElsherif/NeuralNetwork-Based-Generic-Compression/blob/master/EncoderDecoderImage.py)
+- [audio_autoencoder.model](https://github.com/AbdelrahmanElsherif/NeuralNetwork-Based-Generic-Compression/blob/master/audio_autoencoder.model)
+- [image_autoencoder.h5](https://github.com/AbdelrahmanElsherif/NeuralNetwork-Based-Generic-Compression/blob/master/image_autoencoder.h5)
