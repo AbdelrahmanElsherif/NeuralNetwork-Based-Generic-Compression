@@ -115,4 +115,4 @@ def decode_image(in_file, out_file):
             horizontal_concatenated_image.clear()  # Clear the Horizontal Concatenate Array
 
     reconstructed_image = cv2.vconcat(vertical_concatenated_image)  # Concatenate Vertically
-    plt.imsave(out_file + ".tiff", reconstructed_image)  # Save the Output Image
+    plt.imsave(out_file, reconstructed_image)  # Save the Output Image
