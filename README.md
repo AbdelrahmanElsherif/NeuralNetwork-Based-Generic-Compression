@@ -1,7 +1,7 @@
 # NeuralNetwork-Based-Generic-Compression
 Generic compression using autoencoder
 
-# Installation
+## Installation
 > Python 3.X.X is required for this to work.
 1. Create your python(v3) virtual environment
 2. Install the necessary packages
@@ -30,11 +30,11 @@ pip install matplotlib
 4. Put the downloaded files in a single folder
 
  
- # Usage
- Open your CMD and navigate to the folder
+ ## Usage
+ Open your CMD and navigate to the installation folder from step 4 (from the Installation section)
 > Note: the model detects the filetype (image/audio) automatically, you don't have to specify.<br/>
 
- ## Encode Mode
+### Encode Mode
 To Encode (compress), use the following command:
 ```
 python main.py encode [input_file_path] [compressed_file_path]
@@ -45,7 +45,7 @@ python main.py encode [input_file_path] [compressed_file_path]
 
 > Note: You are required to include the input file extension but not the compressed file.
  
-## Decode Mode 
+### Decode Mode 
 To Decode (decompress), use the following command:
 ```
 python main.py decode [compressed_file_path] [output_file_path]
