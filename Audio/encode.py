@@ -121,12 +121,6 @@ def decode(in_file, out_file):
        and decodes a wav file from them at the provided location.
        example : python encode.py decode "path of the .npz file inteded for reconstructing" " path of directory where to save the reconstructed audio file "
        """
-=======
-    This function takes in a file prefix to a data/model file pair,
-    and decodes a wav file from them at the provided location.
-    example : python encode.py decode "path of the .npz file intended for reconstructing" " path of directory where to save the reconstructed audio file "
-    """
->>>>>>> aca3d036df5b01e7c7d10cb8673429e5f21a00be
     # Load the model
     autoencoder = keras.models.load_model("audio_autoencoder.model")
 
@@ -163,11 +157,6 @@ def decode(in_file, out_file):
 
 #Argumets to run the script
 def main():
-    # Limit Keras Memory Usage to avoid crashes
-    config = tf.ConfigProto()
-    config.gpu_options.per_process_gpu_memory_fraction = 0.7
-    session = tf.Session(config=config)
-
     # Do command line stuff
     parser = argparse.ArgumentParser(description='An experimental audio compressor using naive autoencoding.')
     subparsers = parser.add_subparsers(help='The mode in which to run')
