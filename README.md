@@ -71,10 +71,10 @@ python main.py decode [compressed_file_path] [output_file_path]
 ## Datasets Used
 ### Image Datasets
 > Note: Not all the content of the datasets were used due to resources limitations.
-https://www.kaggle.com/evgeniumakov/images4k
-http://www.cs.toronto.edu/~kriz/cifar.html
-https://www.kaggle.com/hsankesara/flickr-image-dataset
-https://www.kaggle.com/vishalsubbiah/pokemon-images-and-types
+https://www.kaggle.com/evgeniumakov/images4k <br/>
+http://www.cs.toronto.edu/~kriz/cifar.html <br/>
+https://www.kaggle.com/hsankesara/flickr-image-dataset <br/>
+https://www.kaggle.com/vishalsubbiah/pokemon-images-and-types <br/>
 
 - All images are processed first using [data_generator.py](https://github.com/AbdelrahmanElsherif/NeuralNetwork-Based-Generic-Compression/tree/master/Image%20Datasets%20Preprocessing) before being used for training.
 - All images are cut into 32x32 blocks to match the model's input size.
