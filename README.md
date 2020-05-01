@@ -62,11 +62,21 @@ python main.py decode [compressed_file_path] [output_file_path]
 ### Audio:
 - .wav
 ### Image:
-- JPEG
-- JPG
-- PNG
-- TIFF
+- .JPEG
+- .JPG
+- .PNG
+- .TIFF
+---
 
-## Audio Dataset:
-- Beatport EDM Key Dataset https://zenodo.org/record/1101082#.XqyLuqgzZPZ 
-> Note: A protion of 2.49 GB Wav files (125 song) of the dataset is used is training
+## Datasets Used
+### Image Datasets
+> Note: Not all the content of the datasets were used due to resources limitations.
+https://www.kaggle.com/evgeniumakov/images4k
+http://www.cs.toronto.edu/~kriz/cifar.html
+https://www.kaggle.com/hsankesara/flickr-image-dataset
+https://www.kaggle.com/vishalsubbiah/pokemon-images-and-types
+
+- All images are processed first using [data_generator.py](https://github.com/AbdelrahmanElsherif/NeuralNetwork-Based-Generic-Compression/tree/master/Image%20Datasets%20Preprocessing) before being used for training.
+- All images are cut into 32x32 blocks to match the model's input size.
+- Around ~1,000,000 32x32x3 images are used for training. (dataset contains 15,000,000+)
+
