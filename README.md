@@ -66,3 +66,6 @@ python main.py decode [compressed_file_path] [output_file_path]
 - JPG
 - PNG
 - TIFF
+
+## Audio Dataset:
+- Beatport EDM Key Dataset https://zenodo.org/record/1101082#.XqyLuqgzZPZ
