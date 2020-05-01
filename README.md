@@ -56,3 +56,13 @@ python main.py decode [compressed_file_path] [output_file_path]
 ```python main.py decode mycompressed my_audio_output```<br/>
 > Note: You are required to include the output file extension for the image output only.
 
+
+---
+## Supported formats
+### Audio:
+- .wav
+### Image:
+- JPEG
+- JPG
+- PNG
+- TIFF
