@@ -36,10 +36,10 @@ pip install matplotlib
 ```
 python main.py encode [input_file_path] [compressed_file_path]
 ```
-**Examples: 
-python main.py encode myimage.png mycompressed
-python main.py encode myaudio.wav mycompressed**
-**
+**Examples:**
+**python main.py encode myimage.png mycompressed**
+**python main.py encode myaudio.wav mycompressed**
+
 > Note: You are required to include the input file extension but not the compressed file.
  <br />
  <br />
@@ -47,8 +47,8 @@ python main.py encode myaudio.wav mycompressed**
 ```
 python main.py decode [compressed_file_path] [output_file_path]
 ```
-**Example: 
-python main.py decode mycompressed my_image_output.png
-python main.py decode mycompressed my_audio_output**
+**Example:** 
+**python main.py decode mycompressed my_image_output.png**
+**python main.py decode mycompressed my_audio_output**
 > Note: You are required to include the output file extension for the image output only.
 
