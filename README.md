@@ -19,6 +19,7 @@ pip install matplotlib
 Alternatively using Conda:
 ```
 conda config --append channels conda-forge
+conda config --append channels slobodan
 conda install tensorflow==2.1.0 keras==2.3.1 opencv==4.2.0.32
 conda install Pillow==7.0.0 image numpy matplotlib
 ```
