@@ -53,7 +53,7 @@ def encode_image(in_file, out_file):
     prediction_encoded = encoder.predict(fragments_array)
 
     # Input image dimensions array
-    size = [width_fragments_count, height_fragments_count]
+    size = [width, height]
 
     # Save output to the decoder and input image dimension arrays into a compressed file
     np.savez_compressed(out_file, Pred=prediction_encoded, Size=size, Type=[0])
@@ -94,8 +94,8 @@ def decode_image(in_file, out_file):
     size_decoded = compressed_file['Size']
 
     # Assign the Image Size parameters to Length and Width
-    width_fragments_count = size_decoded[0]  # Width
-    height_fragments_count = size_decoded[1]  # Length
+    width_fragments_count = math.ceil(size_decoded[0]/32)  # Width
+    height_fragments_count = math.ceil(size_decoded[1]/32)  # Length
 
     # Initialize arrays to load the Decoded Image
     vertical_concatenated_image = []
@@ -115,4 +115,5 @@ def decode_image(in_file, out_file):
             horizontal_concatenated_image.clear()  # Clear the Horizontal Concatenate Array
 
     reconstructed_image = cv2.vconcat(vertical_concatenated_image)  # Concatenate Vertically
+    reconstructed_image = reconstructed_image[:Size_Decoded[1], :Size_Decoded[2],:] # Resize the image to it's original resolution and trim black padding
     plt.imsave(out_file, reconstructed_image)  # Save the Output Image
