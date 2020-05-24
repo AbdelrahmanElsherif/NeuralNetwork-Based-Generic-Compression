@@ -70,8 +70,7 @@ def encode_audio(in_file, out_file):
     Takes in a file path to read (a wav file)
     and a file path to write the encoded file to
     """
-    model = input("enter model name: ")
-    autoencoder = keras.models.load_model(model + ".model")
+    autoencoder = keras.models.load_model("audio_autoencoder.model")
     in_layer = keras.layers.Input(shape=(416, 1))
     encode = autoencoder.layers[1](in_layer)
     encode = autoencoder.layers[2](encode)
@@ -127,8 +126,7 @@ def decode_audio(in_file, out_file):
     and decodes a wav file from them at the provided location.
     """
     # Load the model
-    model = input("enter model name: ")
-    autoencoder = keras.models.load_model(model + ".model")
+    autoencoder = keras.models.load_model("audio_autoencoder.model")
     in_layer = keras.layers.Input(shape=(13,))
     decode = autoencoder.layers[-13](in_layer)
     decode = autoencoder.layers[-12](decode)
