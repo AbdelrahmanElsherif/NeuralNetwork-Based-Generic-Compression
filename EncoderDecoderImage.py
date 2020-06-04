@@ -10,7 +10,7 @@ def encode_image(in_file, out_file):
     # Load the trained model
     loaded_model = tf.keras.models.load_model('image_autoencoder.h5')
     # Encoder Model
-    encoder = tf.keras.Model(loaded_model.input, loaded_model.layers[9].output)
+    encoder = tf.keras.Model(loaded_model.input, loaded_model.layers[8].output)
 
     fragments_array = []
 
@@ -32,10 +32,10 @@ def encode_image(in_file, out_file):
     for i in range(0, height_fragments_count):
 
         for j in range(0, width_fragments_count):
-            Image_Fragment = original_image.crop((x1, y1, x2, y2))  # Crop the first block
-            Image_Fragment_Array = np.array(Image_Fragment)  # Save it into a numpy array
+            image_fragment = original_image.crop((x1, y1, x2, y2))  # Crop the first block
+            image_fragment_array = np.array(image_fragment)  # Save it into a numpy array
             fragments_count += 1
-            fragments_array.append(Image_Fragment_Array)  # Add the first block numpy array to Input Image
+            fragments_array.append(image_fragment_array)  # Add the first block numpy array to Input Image
             # Increment the points to catch the next fragment (32x32x3 fragments)
             x1 = x1 + 32
             x2 = x2 + 32
@@ -64,25 +64,31 @@ def decode_image(in_file, out_file):
     loaded_model = tf.keras.models.load_model('image_autoencoder.h5')
 
     # Decoder Model
-    decoder_input = tf.keras.Input(shape=(8, 8, 2))
-    decoder_layer_1 = loaded_model.layers[10]
-    decoder_layer_2 = loaded_model.layers[11]
-    decoder_layer_3 = loaded_model.layers[12]
-    decoder_layer_4 = loaded_model.layers[13]
-    decoder_layer_5 = loaded_model.layers[14]
-    decoder_layer_6 = loaded_model.layers[15]
-    decoder_layer_7 = loaded_model.layers[16]
-    decoder_layer_8 = loaded_model.layers[17]
+    decoder_input = tf.keras.Input(shape=(4, 4, 6))
+    decoder_layer_1 = loaded_model.layers[9]
+    decoder_layer_2 = loaded_model.layers[10]
+    decoder_layer_3 = loaded_model.layers[11]
+    decoder_layer_4 = loaded_model.layers[12]
+    decoder_layer_5 = loaded_model.layers[13]
+    decoder_layer_6 = loaded_model.layers[14]
+    decoder_layer_7 = loaded_model.layers[15]
+    decoder_layer_8 = loaded_model.layers[16]
+    decoder_layer_9 = loaded_model.layers[17]
+    decoder_layer_10 = loaded_model.layers[18]
+    decoder_layer_11 = loaded_model.layers[19]
 
-    decoder = tf.keras.Model(decoder_input, decoder_layer_8(
-        decoder_layer_7(
-            decoder_layer_6(
-                decoder_layer_5(
-                    decoder_layer_4(
-                        decoder_layer_3(
-                            decoder_layer_2(
-                                decoder_layer_1(
-                                    decoder_input)))))))))
+    decoder = tf.keras.Model(decoder_input, decoder_layer_11(
+        decoder_layer_10(
+            decoder_layer_9(
+                decoder_layer_8(
+                    decoder_layer_7(
+                        decoder_layer_6(
+                            decoder_layer_5(
+                                decoder_layer_4(
+                                    decoder_layer_3(
+                                        decoder_layer_2(
+                                            decoder_layer_1(
+                                                decoder_input))))))))))))
 
     # Load the compressed file
     compressed_file = np.load(in_file + ".npz")
@@ -115,5 +121,5 @@ def decode_image(in_file, out_file):
             horizontal_concatenated_image.clear()  # Clear the Horizontal Concatenate Array
 
     reconstructed_image = cv2.vconcat(vertical_concatenated_image)  # Concatenate Vertically
-    reconstructed_image = reconstructed_image[:Size_Decoded[1], :Size_Decoded[2],:] # Resize the image to it's original resolution and trim black padding
+    reconstructed_image = reconstructed_image[:size_decoded[0], :size_decoded[1],:] # Resize the image to it's original resolution and trim black padding
     plt.imsave(out_file, reconstructed_image)  # Save the Output Image
