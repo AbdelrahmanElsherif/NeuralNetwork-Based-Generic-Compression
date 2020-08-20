@@ -1,111 +1,74 @@
-
 import wave, struct
 import keras
 from keras.models import Model
-from keras.layers import Dense, Input, LSTM
+from keras.layers import Dense, Input, LSTM, Bidirectional, Conv1D, AveragePooling1D, MaxPool1D, UpSampling1D, Flatten, Reshape
 import numpy as np
 import os
+from scipy.io import wavfile
 
-
-#Loading training data
-in_layer = Input(shape=(1, 441))
+in_layer = Input(shape=(416, 1))
 # Construct the encoder layers
-encode = Dense(441, activation='relu')(in_layer)
-encode = Dense(441 // 2, activation='relu')(encode)
-encode = Dense(441 // 4, activation='relu')(encode)
-encode = Dense(441 // 8, activation='relu')(encode)
-encode = Dense(441 // 16, activation='relu')(encode)
+encode = Conv1D(filters=16, kernel_size=5, padding='same', activation='relu')(in_layer)
+encode = AveragePooling1D()(encode)
+encode = Conv1D(filters=32, kernel_size=5, padding='same', activation='relu')(encode)
+encode = AveragePooling1D()(encode)
+encode = Conv1D(filters=32, kernel_size=3, padding='same', activation='relu')(encode)
+encode = AveragePooling1D()(encode)
+encode = Conv1D(filters=32, kernel_size=3, padding='same', activation='relu')(encode)
+encode = AveragePooling1D()(encode)
+encode = Conv1D(filters=64, kernel_size=3, padding='same', activation='relu')(encode)
+encode = AveragePooling1D()(encode)
+encode = Flatten()(encode)
+encode = Dense(13, activation='relu')(encode)
 
 # Construct the decoder layers
-decode = Dense(441 // 8, activation='relu')(encode)
-decode = Dense(441 // 4, activation='relu')(decode)
-decode = Dense(441 // 2, activation='relu')(decode)
-decode = Dense(441, activation='sigmoid')(decode)
+decode = Dense(13*64, activation='relu')(encode)
+decode = Reshape((13, 64))(decode)
+decode = Conv1D(filters=64, kernel_size=3, padding='same', activation='relu')(decode)
+decode = UpSampling1D()(decode)
+decode = Conv1D(filters=32, kernel_size=3, padding='same', activation='relu')(decode)
+decode = UpSampling1D()(decode)
+decode = Conv1D(filters=32, kernel_size=3, padding='same', activation='relu')(decode)
+decode = UpSampling1D()(decode)
+decode = Conv1D(filters=32, kernel_size=5, padding='same', activation='relu')(decode)
+decode = UpSampling1D()(decode)
+decode = Conv1D(filters=16, kernel_size=5, padding='same', activation='relu')(decode)
+decode = UpSampling1D()(decode)
+decode = Conv1D(filters=1, kernel_size=5, padding='same', activation='relu')(decode)
 
 # The autoencoder is the whole thing
 autoencoder = Model(in_layer, decode)
+autoencoder.summary()
 
 # Compile the model
-autoencoder.compile('adamax', loss='mean_squared_logarithmic_error')
+autoencoder.compile('Adamax', loss='mean_squared_logarithmic_error', metrics=['accuracy'])
 
-
-def dataFromWave(fname):
-    """
-    Reads a wav file to samples
-    """
-    f = wave.open(fname, 'rb')
-    # Read Channel Number
-    chans = f.getnchannels()
-    # Get raw sample count
-    samps = f.getnframes()
-    # Get bit-width of samples
-    sampwidth = f.getsampwidth()
-    # Get sampling rate
-    rate = f.getframerate()
-    # Read samples
-    if sampwidth == 3:  # have to read this one sample at a time
-        s = ''
-        for k in range(samps):
-            fr = f.readframes(1)
-            for c in range(0, 3 * chans, 3):
-                s += '\0' + fr[c:(c + 3)]  # put TRAILING 0 to make 32-bit (file is little-endian)
-    else:
-        s = f.readframes(samps)
-    f.close()
-    # Unpack samples
-    unpstr = '<{0}{1}'.format(samps * chans, {1: 'b', 2: 'h', 3: 'i', 4: 'i', 8: 'q'}[sampwidth])
-    x = list(struct.unpack(unpstr, s))
-    if sampwidth == 3:
-        x = [k >> 8 for k in x]  # downshift to get +/- 2^24 with sign extension
-
-    return x, chans, samps, sampwidth, rate
-
-
-def train():
-    # Start training
-    autoencoder.fit(train_data, train_data, epochs=10, shuffle=True, callbacks=[cp_callback])
-    #Saving trained model
-    autoencoder.save("audio_autoencoder.model")
-
-# Folder containing training dataset
-DATA_FILES_WAV = 'audio_wav'
-
-#Loading training data
-def load_data():
+def load_data(DATA_FILES_WAV):
     train_data = np.array([])
-    rows = 0     # used to calculate the number of files in the training data
     directory = os.fsencode(DATA_FILES_WAV)
-    '''
-         Looping through files of the training data, 
-         Collecting usefel data to use in compresssing and Reconstrucing the audio file 
-         Loading all the training audio files into a single training file 
-        '''
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
         print(filename)
         if filename.endswith(".wav"):
-            data, chans, samps, width, samp_rate = dataFromWave(DATA_FILES_WAV + "/" + filename)
-            rate = samp_rate // 100
-            data = np.array(data)
-            # Normalizing the data to range from [0:1] instead of [-32768:32678]
-            data = data.astype(float) / float(pow(2, 15))
-            data += 1.0
-            data = data / 2.0
-            n_in = len(data)
-            p_size = n_in + (rate - (n_in % rate))
-            padded = np.zeros((p_size,))
-            padded[0:n_in] = data
-            inputs = padded.reshape((len(padded) // rate, rate))
-            # Appending each file in the training data folder to have one csv file holding the entire training data
-            train_data = np.append(train_data, inputs)
-            rows = rate + (len(padded) // rate)
-    return train_data, rows
+            sample_rate, samples = wavfile.read(DATA_FILES_WAV + '/' + filename)
+            samples = np.concatenate(samples)
+            samples = samples.astype(float) / float(pow(2, 15))
+            samples += 1.0
+            samples = samples / 2.0
+            samples = np.pad(samples, (0, 416-(len(samples)%416)), 'constant')
+            train_data = np.append(train_data, samples)
+    return train_data
 
 
-train_data, rows = load_data()
-#Saving the weights of the model into checkpoint file
-checkpoint_path = "cp.ckpt"
-cp_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
-                                              save_weights_only=True,
-                                              verbose=1)
-train()
+cp_callback = keras.callbacks.ModelCheckpoint(filepath="cp.ckpt",
+                                                 save_weights_only=True,
+                                                 verbose=1)
+
+train_data = load_data('audio_wav_training')
+
+autoencoder.load_weights('cp.ckpt')
+
+train_data = train_data.reshape(len(train_data)//416 ,416, 1)
+autoencoder.fit(train_data, train_data, epochs=10, shuffle=True, callbacks=[cp_callback])
+autoencoder.save("autoencoder_1Channel.model")
+
