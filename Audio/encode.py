@@ -1,178 +1,106 @@
-import wave, struct
 import keras
-import tensorflow as tf
-import argparse
-import noisereduce as nr
 import numpy as np
+from scipy import signal
+from scipy.io import wavfile
 
-# Extracting the essential data (amplitude,#samples,#channels, samplewidth, sampling rate )from the wave audio file
-def dataFromWave(fname):
-    """
-    Reads a wav file to samples
-    """
-    f = wave.open(fname, 'rb')
-    # Read Channel Number
-    chans = f.getnchannels()
-    # Get raw sample count
-    samps = f.getnframes()
-    # Get bit-width of samples
-    sampwidth = f.getsampwidth()
-    # Get sampling rate
-    rate = f.getframerate()
-    # Read samples
-    if sampwidth == 3:  # have to read this one sample at a time
-        s = ''
-        for k in range(samps):
-            fr = f.readframes(1)
-            for c in range(0, 3 * chans, 3):
-                s += '\0' + fr[c:(c + 3)]  # put TRAILING 0 to make 32-bit (file is little-endian)
-    else:
-        s = f.readframes(samps)
-    f.close()
-    # Unpack samples
-    unpstr = '<{0}{1}'.format(samps * chans, {1: 'b', 2: 'h', 3: 'i', 4: 'i', 8: 'q'}[sampwidth])
-    x = list(struct.unpack(unpstr, s))
-    if sampwidth == 3:
-        x = [k >> 8 for k in x]  # downshift to get +/- 2^24 with sign extension
 
-    return x, chans, samps, sampwidth, rate
-
-#Reconstructing the wave audio files using the data samples collected previously
-def dataToWave(fname, data, chans, samps, sampwidth, rate):
+def encode_audio(in_file, out_file):
     """
-    Writes samples to a wav file
+    Takes in a file path to read (a wav file)
+    and a file path to write the encoded file to
     """
-    obj = wave.open(fname, 'wb')
-    # Set parameters
-    obj.setnchannels(chans)
-    obj.setsampwidth(sampwidth)
-    obj.setframerate(rate)
-    # set up the packaging format
-    packstr = "<{0}".format({1: 'b', 2: 'h', 3: 'i', 4: 'i', 8: 'q'}[sampwidth])
-    # Package the samples
-    for i in range(samps * chans):
-        obj.writeframesraw(struct.pack(packstr, data[i]))
-    obj.close()
-
-# Bounding the audio amplitude to range from [-32768:32768]
-def norm(x):
-    """
-    NN output isn't quite perfect, make sure it's bounded
-    """
-    # If we're outside allowable wav value, bound them
-    if x < -32768:
-        return -32768
-    if x > 32767:
-        return 32767
-    return x
-
-#Compressing the audio file and getting a .npz file as an output
-def encode(in_file, out_file):
-    """
-        Takes in a file path to read (a wav file)
-       and a file path to write the encoded file to
-       example: python encode.py encode "path of file intended for compression" "path of directory where to save .npz file with the specified name for it "
-    """
-
-    # Loading the previously trained model
+    # construct the encoder
     autoencoder = keras.models.load_model("audio_autoencoder.model")
-
-    # constructing the encoder layers
-    in_layer = keras.layers.Input(shape=(1, 441))
+    in_layer = keras.layers.Input(shape=(416, 1))
     encode = autoencoder.layers[1](in_layer)
     encode = autoencoder.layers[2](encode)
     encode = autoencoder.layers[3](encode)
     encode = autoencoder.layers[4](encode)
     encode = autoencoder.layers[5](encode)
+    encode = autoencoder.layers[6](encode)
+    encode = autoencoder.layers[7](encode)
+    encode = autoencoder.layers[8](encode)
+    encode = autoencoder.layers[9](encode)
+    encode = autoencoder.layers[10](encode)
+    encode = autoencoder.layers[11](encode)
+    encode = autoencoder.layers[12](encode)
     encoder = keras.models.Model(in_layer, encode)
 
     # Read the file
-    data, chans, samps, width, samp_rate = dataFromWave(in_file)
+    samp_rate, data = wavfile.read(in_file)
+    # check if the file is mono or stereo
+    if len(data.shape) == 2:
+        data = np.concatenate(data)
+        chans = 2
+    else:
+        chans = 1
 
-    # Turn the samples into a numpy array
-    data = np.array(data)
-
-    # Set our encoding frame width
-    # Experimentally determined that 1/100th of a second has decent results
-    rate = samp_rate // 100
     # Rescale integer samples over range [-32768,32767] to floats over range [0.0,1.0]
-    data = data.astype(float) / float(pow(2, 15))
+    data = data.astype('float32') / float(pow(2, 15))
     data += 1.0
     data = data / 2.0
+
     # Pad the samples with zeroes, if needed, to make the last encoding frame full
-    n_in = len(data)
-    p_size = n_in + (rate - (n_in % rate))
-    padded = np.zeros((p_size,))
-    padded[0:n_in] = data
+    padded = np.pad(data, (0, 416 - (len(data) % 416)), 'constant')
 
     # Construct input layer
-    inputs = padded.reshape(len(padded)//rate, 1, rate)
+    inputs = padded.reshape(len(padded) // 416, 416, 1)
 
     # Encode the data
     encoded = encoder.predict(inputs)
+
     # Save the encoded data, as well as the important parameters
-    np.savez_compressed(out_file, data=encoded, params=np.array([chans, samps, width, samp_rate]))
+    np.savez_compressed(out_file, data=encoded, rate=samp_rate, Type=1, channels=chans)
 
-# Decompressing the .npz file to an audio file
-def decode(in_file, out_file):
+
+def decode_audio(in_file, out_file):
     """
-<<<<<<< HEAD
-       This function takes in a file prefix to a data/model file pair,
-       and decodes a wav file from them at the provided location.
-       example : python encode.py decode "path of the .npz file inteded for reconstructing" " path of directory where to save the reconstructed audio file "
-       """
-    # Load the model
+    This function takes in a file prefix to a data/model file pair,
+    and decodes a wav file from them at the provided location.
+    """
+    # construct the decoder
     autoencoder = keras.models.load_model("audio_autoencoder.model")
-
-    # Constructing the decoder layers
-    in_layer = keras.layers.Input(shape=(1, 441//16))
-    decode = autoencoder.layers[-4](in_layer)
+    in_layer = keras.layers.Input(shape=(13,))
+    decode = autoencoder.layers[-13](in_layer)
+    decode = autoencoder.layers[-12](decode)
+    decode = autoencoder.layers[-11](decode)
+    decode = autoencoder.layers[-10](decode)
+    decode = autoencoder.layers[-9](decode)
+    decode = autoencoder.layers[-8](decode)
+    decode = autoencoder.layers[-7](decode)
+    decode = autoencoder.layers[-6](decode)
+    decode = autoencoder.layers[-5](decode)
+    decode = autoencoder.layers[-4](decode)
     decode = autoencoder.layers[-3](decode)
     decode = autoencoder.layers[-2](decode)
     decode = autoencoder.layers[-1](decode)
     decoder = keras.models.Model(in_layer, decode)
+
     # Load the data
     ins = np.load(in_file + ".npz")
     encoded = ins['data']
-    chans = ins['params'][0]
-    samps = ins['params'][1]
-    width = ins['params'][2]
-    samp_rate = ins['params'][3]
+    samp_rate = ins['rate']
+    channels = ins['channels']
+
     # Run the decoder
     outputs = decoder.predict(encoded)
 
-    # Build a wav file
-    out = outputs.reshape(outputs.shape[0]*outputs.shape[-1])
+    # reform output data to the original shape and range
+    out = outputs.reshape(outputs.shape[0] * outputs.shape[1])
+    out = ((out * 2.0) - 1.0) * float(pow(2, 15))
+    out = np.rint(out).astype(np.int16)
 
-    # Removing noise in the reconstructed file using thresholding and noise clipping
-    if np.any(out > 0.9):
-        noisy_part = out[out > 0.9]
-        out = nr.reduce_noise(audio_clip=out, noise_clip=noisy_part)
+    # perform stft on output data to be in frequency domain
+    frequencies, times, spectrogram = signal.stft(out, samp_rate, window='hann', nperseg=1024, noverlap=512)
+    # eliminate values with frequencies higher than 1680 HZ to decrease noise
+    spectrogram[40:, :] = 0
+    # perform inverse stft to get back data in time domain
+    _, out = signal.istft(spectrogram, samp_rate, window='hann', nperseg=1024, noverlap=512)
+    out = np.rint(out).astype(np.int16)
 
-    out = (((out * 2.0) - 1.0) * float(pow(2, 15))).astype(int)
+    # check if file should be stereo
+    if channels == 2:
+        out = out.reshape(len(out)//2, 2)
 
-    out = list(map(norm, out))
-
-    dataToWave(out_file + ".wav", out, chans, samps, width, samp_rate)
-
-#Argumets to run the script
-def main():
-    # Do command line stuff
-    parser = argparse.ArgumentParser(description='An experimental audio compressor using naive autoencoding.')
-    subparsers = parser.add_subparsers(help='The mode in which to run')
-    encode_parser = subparsers.add_parser('encode', help='Encode a wav file')
-    encode_parser.add_argument('in_file', type=str, help='A wav file to be encoded.')
-    encode_parser.add_argument('out_file', type=str,
-                               help='The file path prefix for the encoded output files to be stored.')
-    encode_parser.set_defaults(func=encode)
-    decode_parser = subparsers.add_parser('decode', help='Decode an encoded wav file')
-    decode_parser.add_argument('in_file', type=str, help='The file path prefix where the encoded files are found.')
-    decode_parser.add_argument('out_file', type=str, help='The file path where the decoded wav should be stored.')
-    decode_parser.set_defaults(func=decode)
-    args = parser.parse_args()
-    if args.func == encode or args.func == decode:
-        args.func(args.in_file, args.out_file)
-
-
-if __name__ == "__main__":
-    main()
+    # build the wav file
+    wavfile.write(out_file+'.wav', samp_rate, out)
