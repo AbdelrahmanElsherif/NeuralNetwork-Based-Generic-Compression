@@ -90,17 +90,33 @@ def decode_audio(in_file, out_file):
     out = ((out * 2.0) - 1.0) * float(pow(2, 15))
     out = np.rint(out).astype(np.int16)
 
-    # perform stft on output data to be in frequency domain
-    frequencies, times, spectrogram = signal.stft(out, samp_rate, window='hann', nperseg=1024, noverlap=512)
-    # eliminate values with frequencies higher than 1680 HZ to decrease noise
-    spectrogram[40:, :] = 0
-    # perform inverse stft to get back data in time domain
-    _, out = signal.istft(spectrogram, samp_rate, window='hann', nperseg=1024, noverlap=512)
-    out = np.rint(out).astype(np.int16)
-
-    # check if file should be stereo
     if channels == 2:
         out = out.reshape(len(out)//2, 2)
+        out1 = out[:, 0]
+        out2 = out[:, 1]
+
+        # perform stft on output data to be in frequency domain
+        frequencies, times, spectrogram1 = signal.stft(out1, samp_rate, window='hann', nperseg=1024, noverlap=512)
+        frequencies, times, spectrogram2 = signal.stft(out2, samp_rate, window='hann', nperseg=1024, noverlap=512)
+        # eliminate values with frequencies higher than 1680 HZ to decrease noise
+        spectrogram1[40:, :] = 0
+        spectrogram2[40:, :] = 0
+        # perform inverse stft to get back data in time domain
+        _, out1 = signal.istft(spectrogram1, samp_rate, window='hann', nperseg=1024, noverlap=512)
+        _, out2 = signal.istft(spectrogram2, samp_rate, window='hann', nperseg=1024, noverlap=512)
+        out1 = np.rint(out1).astype(np.int16)
+        out2 = np.rint(out2).astype(np.int16)
+        out1 = out1.reshape(out1.shape[0], 1)
+        out2 = out2.reshape(out2.shape[0], 1)
+        out = np.concatenate((out1, out2), axis=1)
+    elif channels == 1:
+        # perform stft on output data to be in frequency domain
+        frequencies, times, spectrogram = signal.stft(out, samp_rate, window='hann', nperseg=1024, noverlap=512)
+        # eliminate values with frequencies higher than 1680 HZ to decrease noise
+        spectrogram[40:, :] = 0
+        # perform inverse stft to get back data in time domain
+        _, out = signal.istft(spectrogram, samp_rate, window='hann', nperseg=1024, noverlap=512)
+        out = np.rint(out).astype(np.int16)
 
     # build the wav file
     wavfile.write(out_file+'.wav', samp_rate, out)
