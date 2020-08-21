@@ -121,5 +121,5 @@ def decode_image(in_file, out_file):
             horizontal_concatenated_image.clear()  # Clear the Horizontal Concatenate Array
 
     reconstructed_image = cv2.vconcat(vertical_concatenated_image)  # Concatenate Vertically
-    reconstructed_image = reconstructed_image[:size_decoded[0], :size_decoded[1],:] # Resize the image to it's original resolution and trim black padding
+    reconstructed_image = reconstructed_image[:size_decoded[1], :size_decoded[0],:] # Resize the image to it's original resolution and trim black padding
     plt.imsave(out_file, reconstructed_image)  # Save the Output Image
